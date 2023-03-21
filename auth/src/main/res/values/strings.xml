@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Tracker</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up_bt">Sign Up</string>
+    <string name="sign_up">Don\'t have an account? Sign Up</string>
+
+</resources>
