@@ -60,8 +60,10 @@ class LoginFragment : Fragment(), View.OnClickListener {
                         if (firebaseUser != null) {
                             navigationListener?.onNavigateToMainFragment()
                         } else {
-                            val errorMessage = exception?.localizedMessage ?: "Authentication failed."
-                            Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
+                            val errorMessage =
+                                exception?.localizedMessage ?: "Authentication failed."
+                            Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT)
+                                .show()
                         }
                     }
                 }

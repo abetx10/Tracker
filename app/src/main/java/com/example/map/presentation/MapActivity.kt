@@ -12,7 +12,6 @@ class MapActivity : AppCompatActivity(), AuthNavigationListener, AuthRegistratio
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Запускаем LoginFragment при первом открытии MapActivity
         if (savedInstanceState == null) {
             val loginFragment = LoginFragment()
             supportFragmentManager.beginTransaction()
@@ -44,5 +43,4 @@ class MapActivity : AppCompatActivity(), AuthNavigationListener, AuthRegistratio
             .addToBackStack(null)
             .commit()
     }
-
 }

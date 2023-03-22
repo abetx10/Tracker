@@ -21,6 +21,7 @@ import com.example.track.data.NetworkUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 class LocationTracker(
@@ -36,13 +37,6 @@ class LocationTracker(
             .setMaxUpdateDelayMillis(TimeUnit.MINUTES.toMillis(10))
             .build()
 
-//    private val locationRequest: LocationRequest =
-//        LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, TimeUnit.MINUTES.toMillis(5))
-//            .setWaitForAccurateLocation(false)
-//            .setMinUpdateIntervalMillis(TimeUnit.SECONDS.toMillis(5))
-//            .setMaxUpdateDelayMillis(TimeUnit.SECONDS.toMillis(5))
-//            .build()
-
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(activity)
 
@@ -50,35 +44,41 @@ class LocationTracker(
 
     private val locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-            val location = locationResult.lastLocation
-            val user = FirebaseAuth.getInstance().currentUser
+            CoroutineScope(Dispatchers.Main).launch {
+                val location = locationResult.lastLocation
+                val user = FirebaseAuth.getInstance().currentUser
 
-            if (user != null) {
-                val data = hashMapOf(
-                    "latitude" to location!!.latitude,
-                    "longitude" to location.longitude,
-                    "timestamp" to System.currentTimeMillis()
-                )
-
-                if (NetworkUtils.isInternetAvailable(activity)) {
-                    FirebaseFirestore.getInstance()
-                        .collection("locations")
-                        .document(user.uid)
-                        .set(data)
-                } else {
-                    // Сохранить в локальной базе данных
-                    val locationUpdate = LocationUpdate(
-                        id = user.uid,
-                        latitude = location!!.latitude,
-                        longitude = location.longitude,
-                        timestamp = System.currentTimeMillis()
+                if (user != null) {
+                    val data = hashMapOf(
+                        "latitude" to location!!.latitude,
+                        "longitude" to location.longitude,
+                        "timestamp" to System.currentTimeMillis()
                     )
-                    CoroutineScope(Dispatchers.IO).launch {
-                        locationRepository.insertLocationUpdate(locationUpdate)
+
+                    if (NetworkUtils.isInternetAvailable(activity)) {
+                        FirebaseFirestore.getInstance()
+                            .collection("locations")
+                            .document(user.uid)
+                            .set(data)
+                    } else {
+                        // Сохранить в локальной базе данных
+                        val locationUpdate = LocationUpdate(
+                            id = user.uid,
+                            latitude = location!!.latitude,
+                            longitude = location.longitude,
+                            timestamp = System.currentTimeMillis()
+                        )
+                        withContext(Dispatchers.IO) {
+                            locationRepository.insertLocationUpdate(locationUpdate)
+                        }
                     }
+                    currentLocation = location
+                    Toast.makeText(
+                        activity,
+                        "Current location: ${location.latitude}, ${location.longitude}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
-                currentLocation = location
-                Toast.makeText(activity, "Current location: ${location.latitude}, ${location.longitude}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -115,7 +115,11 @@ class LocationTracker(
         ) {
             requestLocationPermissions()
         } else {
-            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
         }
     }
 
@@ -127,7 +131,7 @@ class LocationTracker(
         stopTracking()
     }
 
-     fun stopTracking() {
+    fun stopTracking() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 }

@@ -11,12 +11,16 @@ import com.example.auth.data.UserProfile
 import com.example.auth.databinding.FragmentSignUpBinding
 import com.example.auth.domain.SignUpUser
 
-class SignUpFragment : Fragment(), AuthRegistrationListener {
+class SignUpFragment : Fragment() {
 
     private lateinit var binding: FragmentSignUpBinding
-    private var authNavigationListener: AuthNavigationListener? = null
+    private var authRegistrationListener: AuthRegistrationListener? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         binding = FragmentSignUpBinding.inflate(inflater, container, false)
         val view = binding.root
 
@@ -25,9 +29,18 @@ class SignUpFragment : Fragment(), AuthRegistrationListener {
             val password = binding.edPasswordSignUp.text.toString()
 
             if (email.isNotEmpty() && password.isNotEmpty()) {
-                SignUpUser(requireContext(), this).registerUser(UserProfile(email, password))
+                val signUpUser = SignUpUser(requireContext(), object : AuthRegistrationListener {
+                    override fun onRegistrationSuccess() {
+                        authRegistrationListener?.onRegistrationSuccess()
+                    }
+                })
+                signUpUser.registerUser(UserProfile(email, password))
             } else {
-                Toast.makeText(requireContext(), "Please enter email and password", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Please enter email and password",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
         return view
@@ -35,19 +48,15 @@ class SignUpFragment : Fragment(), AuthRegistrationListener {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        if (context is AuthNavigationListener) {
-            authNavigationListener = context
+        if (context is AuthRegistrationListener) {
+            authRegistrationListener = context
         } else {
-            throw RuntimeException("$context must implement AuthNavigationListener")
+            throw RuntimeException("$context must implement AuthRegistrationListener")
         }
     }
 
     override fun onDetach() {
         super.onDetach()
-        authNavigationListener = null
-    }
-
-    override fun onRegistrationSuccess() {
-        authNavigationListener?.onSignUpRequested()
+        authRegistrationListener = null
     }
 }

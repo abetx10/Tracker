@@ -15,9 +15,7 @@ abstract class LocationDatabase : RoomDatabase() {
         fun getInstance(context: Context): LocationDatabase {
             if (instance == null) {
                 instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    LocationDatabase::class.java,
-                    "location_database"
+                    context.applicationContext, LocationDatabase::class.java, "location_database"
                 ).build()
             }
             return instance!!
