@@ -3,6 +3,7 @@ package com.example.map.domain
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -28,6 +29,7 @@ import kotlinx.coroutines.withContext
 class LocationMapHandler(
     private val fragment: Fragment,
     private val map: GoogleMap,
+    private val googleMapsApiKey: String,
     private val onRouteUpdated: (route: List<LatLng>) -> Unit
 ) : GoogleMap.OnMyLocationButtonClickListener {
 
@@ -43,7 +45,7 @@ class LocationMapHandler(
 
     private fun initGeoApiContext() {
         geoApiContext = GeoApiContext.Builder()
-            .apiKey("GOOGLE_API_KEY")
+            .apiKey(googleMapsApiKey)
             .build()
     }
 
@@ -54,12 +56,6 @@ class LocationMapHandler(
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             map.isMyLocationEnabled = true
-            CoroutineScope(Dispatchers.Main).launch {
-                val currentLatLng = getCurrentLocation()
-                currentLatLng?.let {
-                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 15f))
-                }
-            }
         } else {
             ActivityCompat.requestPermissions(
                 fragment.requireActivity(),
@@ -78,6 +74,16 @@ class LocationMapHandler(
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 enableMyLocation()
+                moveCameraToCurrentLocation()
+            }
+        }
+    }
+
+    private fun moveCameraToCurrentLocation() {
+        CoroutineScope(Dispatchers.Main).launch {
+            val currentLatLng = getCurrentLocation()
+            currentLatLng?.let {
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(it, 15f))
             }
         }
     }
@@ -91,6 +97,7 @@ class LocationMapHandler(
                 LatLng(it.latitude, it.longitude)
             }
         } catch (e: SecurityException) {
+            Log.e("LocationMapHandler", "Ошибка доступа к текущему местоположению", e)
             null
         }
     }
@@ -99,6 +106,7 @@ class LocationMapHandler(
         CoroutineScope(Dispatchers.Main).launch {
             val currentLatLng = getCurrentLocation()
             val firebaseLocation = FirebaseLocationProvider().getCurrentFirebaseLocation()
+            Log.d("LocationMapHandler", "Firebase location: $firebaseLocation")
             if (currentLatLng != null && firebaseLocation != null) {
                 val firebaseLatLng =
                     LatLng(firebaseLocation.latitude, firebaseLocation.longitude)
@@ -134,6 +142,7 @@ class LocationMapHandler(
             }
 
             override fun onFailure(e: Throwable) {
+                Log.e("LocationMapHandler", "Ошибка получения маршрута", e)
             }
         })
     }

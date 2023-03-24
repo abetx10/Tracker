@@ -18,8 +18,8 @@ class LocationMapViewModel : ViewModel() {
     private val _locationMapHandler = MutableLiveData<LocationMapHandler>()
     val locationMapHandler: LiveData<LocationMapHandler> = _locationMapHandler
 
-    fun initializeMap(map: GoogleMap, fragment: SupportMapFragment) {
-        val locationMapHandler = LocationMapHandler(fragment, map) { newRoute ->
+    fun initializeMap(map: GoogleMap, fragment: SupportMapFragment, googleMapsApiKey: String) {
+        val locationMapHandler = LocationMapHandler(fragment, map, googleMapsApiKey) { newRoute ->
             updateRoute(newRoute)
         }
         _locationMapHandler.value = locationMapHandler

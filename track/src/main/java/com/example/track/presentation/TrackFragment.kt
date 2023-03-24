@@ -34,7 +34,7 @@ class TrackFragment : Fragment(), View.OnClickListener {
 
         val locationRepository = LocationRepository(requireActivity())
         val locationTracker =
-            LocationTracker(requireActivity(), viewLifecycleOwner.lifecycle, locationRepository)
+            LocationTracker(requireContext(), locationRepository, viewLifecycleOwner.lifecycle)
         trackViewModel.setLocationTracker(locationTracker)
 
         trackViewModel.isTracking.observe(viewLifecycleOwner, Observer { isTracking ->
@@ -60,8 +60,16 @@ class TrackFragment : Fragment(), View.OnClickListener {
                 )
             }
         })
-
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val isTracking = trackViewModel.loadTrackingState()
+        trackViewModel.isTracking.value = isTracking
+
+        trackViewModel.startOrStopService()
     }
 
     override fun onClick(v: View?) {

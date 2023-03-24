@@ -1,7 +1,7 @@
 package com.example.map.presentation
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import com.example.auth.presentation.*
 import com.example.map.R
 
@@ -38,9 +38,10 @@ class MapActivity : AppCompatActivity(), AuthNavigationListener, AuthRegistratio
 
     override fun onNavigateToMainFragment() {
         val locationMapFragment = LocationMapFragment()
+
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, locationMapFragment)
-            .addToBackStack(null)
+//            .addToBackStack(null)
             .commit()
     }
 }

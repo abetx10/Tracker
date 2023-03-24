@@ -30,7 +30,6 @@ class FirebaseLocationProvider {
                     }
                 }
             } catch (e: Exception) {
-                // Handle exception
             }
         }
         return@withContext null

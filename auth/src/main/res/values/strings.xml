@@ -5,5 +5,7 @@
     <string name="sign_in">Sign In</string>
     <string name="sign_up_bt">Sign Up</string>
     <string name="sign_up">Don\'t have an account? Sign Up</string>
+    <string name="error_email">Please enter an email</string>
+    <string name="error_password">Please enter a password</string>
 
 </resources>

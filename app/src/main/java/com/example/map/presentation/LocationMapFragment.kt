@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import com.example.map.BuildConfig
 import com.example.map.domain.LocationMapHandler
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -28,7 +29,8 @@ class LocationMapFragment : SupportMapFragment(), OnMapReadyCallback {
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
-        viewModel.initializeMap(googleMap, this)
+        val googleMapsApiKey = BuildConfig.MAPS_API_KEY
+        viewModel.initializeMap(googleMap, this, googleMapsApiKey)
         viewModel.locationMapHandler.observe(viewLifecycleOwner, Observer { locationMapHandler ->
             this.locationMapHandler = locationMapHandler
         })

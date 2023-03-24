@@ -1,23 +1,23 @@
 package com.example.track.domain
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Looper
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import android.Manifest
-import android.location.Location
-import android.widget.Toast
-import com.google.android.gms.location.*
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.example.track.data.LocationRepository
 import com.example.track.data.LocationUpdate
 import com.example.track.data.NetworkUtils
+import com.google.android.gms.location.*
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -25,20 +25,26 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 class LocationTracker(
-    private val activity: Activity,
-    lifecycle: Lifecycle,
-    private val locationRepository: LocationRepository
+    private val appContext: Context,
+    private val locationRepository: LocationRepository,
+    private val lifecycle: Lifecycle
 ) : DefaultLifecycleObserver {
 
+//    private val locationRequest: LocationRequest =
+//        LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, TimeUnit.MINUTES.toMillis(10))
+//            .setWaitForAccurateLocation(false)
+//            .setMinUpdateIntervalMillis(TimeUnit.MINUTES.toMillis(10))
+//            .setMaxUpdateDelayMillis(TimeUnit.MINUTES.toMillis(10))
+//            .build()
+
     private val locationRequest: LocationRequest =
-        LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, TimeUnit.MINUTES.toMillis(10))
-            .setWaitForAccurateLocation(false)
-            .setMinUpdateIntervalMillis(TimeUnit.MINUTES.toMillis(10))
-            .setMaxUpdateDelayMillis(TimeUnit.MINUTES.toMillis(10))
+        LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, TimeUnit.SECONDS.toMillis(10))
+            .setMinUpdateIntervalMillis(TimeUnit.SECONDS.toMillis(10))
+            .setMaxUpdateDelayMillis(TimeUnit.SECONDS.toMillis(10))
             .build()
 
     private val fusedLocationClient: FusedLocationProviderClient =
-        LocationServices.getFusedLocationProviderClient(activity)
+        LocationServices.getFusedLocationProviderClient(appContext)
 
     private var currentLocation: Location? = null
 
@@ -55,13 +61,12 @@ class LocationTracker(
                         "timestamp" to System.currentTimeMillis()
                     )
 
-                    if (NetworkUtils.isInternetAvailable(activity)) {
+                    if (NetworkUtils.isInternetAvailable(appContext)) {
                         FirebaseFirestore.getInstance()
                             .collection("locations")
                             .document(user.uid)
                             .set(data)
                     } else {
-                        // Сохранить в локальной базе данных
                         val locationUpdate = LocationUpdate(
                             id = user.uid,
                             latitude = location!!.latitude,
@@ -74,7 +79,7 @@ class LocationTracker(
                     }
                     currentLocation = location
                     Toast.makeText(
-                        activity,
+                        appContext,
                         "Current location: ${location.latitude}, ${location.longitude}",
                         Toast.LENGTH_LONG
                     ).show()
@@ -92,24 +97,28 @@ class LocationTracker(
     }
 
     private fun requestLocationPermissions() {
-        ActivityCompat.requestPermissions(
-            activity,
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ),
-            REQUEST_LOCATION_PERMISSIONS
-        )
+
+        if (appContext is Activity) {
+            ActivityCompat.requestPermissions(
+                appContext,
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                REQUEST_LOCATION_PERMISSIONS
+            )
+        }
     }
+
 
     @SuppressLint("MissingPermission")
     fun startTracking() {
         if (ContextCompat.checkSelfPermission(
-                activity,
+                appContext,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(
-                activity,
+                appContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -125,10 +134,6 @@ class LocationTracker(
 
     fun getLastLocation(): Location? {
         return currentLocation
-    }
-
-    override fun onDestroy(owner: LifecycleOwner) {
-        stopTracking()
     }
 
     fun stopTracking() {
